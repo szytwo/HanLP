@@ -285,9 +285,19 @@ fabric.properties
 .idea
 *.iml
 data
-.vscode
+#.vscode
 *.pkl
 *.pdf
 _static/
 _build/
 _templates/
+
+# folders
+error/
+logs/
+checkpoints/
+
+# data files
+*.whl
+*.tar
+*.uploading.cfg
