@@ -111,7 +111,12 @@ async def process_tok(request: ProcessTokRequest):
     start_time = time.time()
 
     try:
-        response.tokens = hanlp_service.analyze(request.text, request.dict_force)
+        doc = hanlp_service.analyze(request.text, request.dict_force)
+
+        response.tok = doc["tok"]
+        response.pos = doc["pos"]
+        response.ner = doc["ner"]
+        response.dep = doc["dep"]
     except Exception as ex:
         response.errcode = -1
         response.errmsg = f"Error occurred: {str(ex)}"

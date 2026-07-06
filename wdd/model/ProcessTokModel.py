@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -26,9 +26,21 @@ class ProcessTokRequest(BaseModel):
 
 
 class ProcessTokResponse(ResponseBaseModel):
-    tokens: List[str] = Field(
+    tok: list[str] = Field(
         default=[],
-        description="分词后的结果列表",
+        description="分词结果",
+    )
+    pos: list[str] = Field(
+        default=[],
+        description="词性标注结果",
+    )
+    ner: Any = Field(
+        default=[],
+        description="命名实体识别结果",
+    )
+    dep: Any = Field(
+        default=[],
+        description="依存句法分析结果",
     )
 
     class Config:
