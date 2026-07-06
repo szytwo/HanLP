@@ -5,6 +5,7 @@ os.environ["HANLP_HOME"] = "./checkpoints/hanlp_cache"
 
 import argparse
 import time
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
@@ -15,13 +16,37 @@ from starlette.middleware.cors import CORSMiddleware  # 引入 CORS中间件模�
 
 import hanlp
 from wdd.file_utils import logging
+from wdd.hanlp_service import HanlpService
 from wdd.model.ProcessTokModel import ProcessTokRequest, ProcessTokResponse
 from wdd.TextProcessor import TextProcessor
 
 # 设置允许访问的域名
 origins = ["*"]  # "*"，即为所有。
 
-app = FastAPI(title="Hanlp Service", version="1.0", docs_url=None)
+
+hanlp_service = HanlpService()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    服务启动时加载模型
+    """
+    logging.info("HanLP Service starting...")
+
+    hanlp_service.load()
+
+    yield
+
+    logging.info("HanLP Service shutdown.")
+
+
+app = FastAPI(
+    title="Hanlp Service",
+    version="1.0",
+    docs_url=None,
+    lifespan=lifespan,
+)
 
 # noinspection PyTypeChecker
 app.add_middleware(
@@ -76,15 +101,17 @@ async def process_tok(request: ProcessTokRequest):
     处理中文分词。
     """
     response = ProcessTokResponse()
+
+    if not request.text:
+        response.errcode = -1
+        response.errmsg = "Text is empty."
+        return response
+
     # 记录开始时间
     start_time = time.time()
 
     try:
-        tokenizer = hanlp.load(hanlp.pretrained.tok.COARSE_ELECTRA_SMALL_ZH)
-        if len(request.dict_force) > 0:
-            tokenizer.dict_force = request.dict_force
-        tokens = tokenizer(request.text)
-        response.tokens = tokens
+        response.tokens = hanlp_service.tokenize(request.text, request.dict_force)
     except Exception as ex:
         TextProcessor.log_error(ex)
         response.errcode = -1
@@ -104,8 +131,12 @@ def health():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="0.0.0.0", help="Host to run the server on")
     parser.add_argument(
         "--port", type=int, default=8120, help="Port to run the server on"
+    )
+    parser.add_argument(
+        "--workers", type=int, default=1, help="Number of worker processes"
     )
     args, unknown = parser.parse_known_args()
 
@@ -113,9 +144,9 @@ if __name__ == "__main__":
 
         uvicorn.run(
             app="api:app",
-            host="0.0.0.0",
+            host=args.host,
             port=args.port,
-            workers=1,
+            workers=args.workers,
             reload=False,
             log_level="info",
         )
