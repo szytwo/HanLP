@@ -16,7 +16,7 @@ from starlette.middleware.cors import CORSMiddleware  # 引入 CORS中间件模�
 
 from wdd.file_utils import logging
 from wdd.hanlp_service import HanlpService
-from wdd.model.ProcessTokModel import ProcessTokRequest, ProcessTokResponse
+from wdd.model.ProcessHanlpModel import ProcessHanlpRequest, ProcessHanlpResponse
 from wdd.TextProcessor import TextProcessor
 
 # 设置允许访问的域名
@@ -94,17 +94,37 @@ async def test():
     return PlainTextResponse("success")
 
 
-@app.post("/process_tok/", response_model=ProcessTokResponse)
-async def process_tok(request: ProcessTokRequest):
+@app.post("/process_eos/", response_model=ProcessHanlpResponse)
+async def process_eos(request: ProcessHanlpRequest):
+    """
+    处理中文分句。
+    """
+    response = ProcessHanlpResponse()
+
+    # 记录开始时间
+    start_time = time.time()
+
+    try:
+        response.eos = hanlp_service.eos(request.text)
+    except Exception as ex:
+        response.errcode = -1
+        response.errmsg = f"Error occurred: {str(ex)}"
+
+        TextProcessor.log_error(ex)
+
+    # 计算耗时
+    elapsed = time.time() - start_time
+    logging.info(f"Processed text in {elapsed:.4f} seconds.")
+
+    return response
+
+
+@app.post("/process_tok/", response_model=ProcessHanlpResponse)
+async def process_tok(request: ProcessHanlpRequest):
     """
     处理中文分词。
     """
-    response = ProcessTokResponse()
-
-    if not request.text:
-        response.errcode = -1
-        response.errmsg = "Text is empty."
-        return response
+    response = ProcessHanlpResponse()
 
     # 记录开始时间
     start_time = time.time()

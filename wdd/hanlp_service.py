@@ -16,10 +16,11 @@ class HanlpService:
     def __init__(self) -> None:
         """初始化 Service，不加载模型。"""
 
-        self._tokenizer = None
+        self._eos = None
+        self._tok = None
         self._pos = None
         self._ner = None
-        self._dependency = None
+        self._dep = None
 
         # 修改 tokenizer.dict_force 时需要加锁
         self._lock = Lock()
@@ -33,14 +34,16 @@ class HanlpService:
         logging.info("Loading HanLP models...")
 
         try:
+            # 分句
+            self._eos = hanlp.load(hanlp.pretrained.eos.UD_CTB_EOS_MUL)
             # 分词
-            self._tokenizer = hanlp.load(hanlp.pretrained.tok.COARSE_ELECTRA_SMALL_ZH)
+            self._tok = hanlp.load(hanlp.pretrained.tok.COARSE_ELECTRA_SMALL_ZH)
             # 词性标注
             self._pos = hanlp.load(hanlp.pretrained.pos.CTB9_POS_ELECTRA_SMALL)
             # 命名实体识别
             self._ner = hanlp.load(hanlp.pretrained.ner.MSRA_NER_ELECTRA_SMALL_ZH)
             # 依存句法
-            self._dependency = hanlp.load(hanlp.pretrained.dep.CTB9_DEP_ELECTRA_SMALL)
+            self._dep = hanlp.load(hanlp.pretrained.dep.CTB9_DEP_ELECTRA_SMALL)
 
             logging.info("HanLP models loaded successfully.")
         except Exception:
@@ -53,10 +56,11 @@ class HanlpService:
         判断模型是否已加载。
         """
         return (
-            self._tokenizer is not None
+            self._eos is not None
+            and self._tok is not None
             and self._pos is not None
             and self._ner is not None
-            and self._dependency is not None
+            and self._dep is not None
         )
 
     def _check_loaded(self) -> None:
@@ -66,6 +70,21 @@ class HanlpService:
 
         if not self.loaded:
             raise RuntimeError("HanLP model has not been loaded.")
+
+    def eos(self, text: str | list[str]) -> list[str]:
+        """
+        中文分句。
+
+        :param text: 输入文本
+        :return: 分句结果
+        """
+
+        self._check_loaded()
+
+        if not text:
+            raise ValueError("text is empty.")
+
+        return self._eos(text)
 
     def tokenize(
         self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
@@ -85,11 +104,11 @@ class HanlpService:
 
         with self._lock:
             if dict_force:
-                self._tokenizer.dict_force = dict_force
+                self._tok.dict_force = dict_force
             else:
-                self._tokenizer.dict_force = None
+                self._tok.dict_force = None
 
-            return self._tokenizer(text)
+            return self._tok(text)
 
     def pos(
         self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
@@ -109,13 +128,13 @@ class HanlpService:
 
         with self._lock:
             if dict_force:
-                self._tokenizer.dict_force = dict_force
+                self._tok.dict_force = dict_force
             else:
-                self._tokenizer.dict_force = None
+                self._tok.dict_force = None
 
             HanLP = (
                 hanlp.pipeline()
-                .append(self._tokenizer, output_key="tok")
+                .append(self._tok, output_key="tok")
                 .append(self._pos, output_key="pos")
             )
 
@@ -139,13 +158,13 @@ class HanlpService:
 
         with self._lock:
             if dict_force:
-                self._tokenizer.dict_force = dict_force
+                self._tok.dict_force = dict_force
             else:
-                self._tokenizer.dict_force = None
+                self._tok.dict_force = None
 
             HanLP = (
                 hanlp.pipeline()
-                .append(self._tokenizer, output_key="tok")
+                .append(self._tok, output_key="tok")
                 .append(self._pos, output_key="pos")
                 .append(self._ner, output_key="ner", input_key="tok")
             )
@@ -170,15 +189,15 @@ class HanlpService:
 
         with self._lock:
             if dict_force:
-                self._tokenizer.dict_force = dict_force
+                self._tok.dict_force = dict_force
             else:
-                self._tokenizer.dict_force = None
+                self._tok.dict_force = None
 
             HanLP = (
                 hanlp.pipeline()
-                .append(self._tokenizer, output_key="tok")
+                .append(self._tok, output_key="tok")
                 .append(self._pos, output_key="pos")
-                .append(self._dependency, output_key="dep", input_key="tok")
+                .append(self._dep, output_key="dep", input_key="tok")
             )
 
             return HanLP(text)
@@ -202,16 +221,16 @@ class HanlpService:
 
         with self._lock:
             if dict_force:
-                self._tokenizer.dict_force = dict_force
+                self._tok.dict_force = dict_force
             else:
-                self._tokenizer.dict_force = None
+                self._tok.dict_force = None
 
             HanLP = (
                 hanlp.pipeline()
-                .append(self._tokenizer, output_key="tok")
+                .append(self._tok, output_key="tok")
                 .append(self._pos, output_key="pos")
                 .append(self._ner, output_key="ner", input_key="tok")
-                .append(self._dependency, output_key="dep", input_key="tok")
+                .append(self._dep, output_key="dep", input_key="tok")
             )
 
             return HanLP(text)
@@ -222,8 +241,9 @@ class HanlpService:
         """
 
         return {
-            "tokenizer": self._tokenizer is not None,
+            "eos": self._eos is not None,
+            "tok": self._tok is not None,
             "pos": self._pos is not None,
             "ner": self._ner is not None,
-            "dependency": self._dependency is not None,
+            "dep": self._dep is not None,
         }

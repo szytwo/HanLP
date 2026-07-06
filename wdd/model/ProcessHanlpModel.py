@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from wdd.model.APIBaseModel import ResponseBaseModel
 
 
-class ProcessTokRequest(BaseModel):
+class ProcessHanlpRequest(BaseModel):
     text: str | list[str] = Field(
         ...,
         description="需要分词的文本，必填",
@@ -25,7 +25,11 @@ class ProcessTokRequest(BaseModel):
         }
 
 
-class ProcessTokResponse(ResponseBaseModel):
+class ProcessHanlpResponse(ResponseBaseModel):
+    eos: list[str] = Field(
+        default=[],
+        description="分句结果",
+    )
     tok: list[str] = Field(
         default=[],
         description="分词结果",
