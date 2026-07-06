@@ -17,10 +17,10 @@ ENV PIP_ROOT_USER_ACTION=ignore
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN pip install --no-cache-dir torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121 \
+    && pip install --no-cache-dir -r api_requirements.txt \
     && rm -rf /root/.cache/pip /tmp/*
 
 RUN pip install --no-cache-dir hanlp \
-    && pip install --no-cache-dir -r api_requirements.txt \
     && rm -rf /root/.cache/pip /tmp/*
 
 COPY . .
