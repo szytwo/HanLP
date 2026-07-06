@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -6,11 +6,11 @@ from wdd.model.APIBaseModel import ResponseBaseModel
 
 
 class ProcessTokRequest(BaseModel):
-    text: str = Field(
+    text: str | list[str] = Field(
         ...,
         description="需要分词的文本，必填",
     )
-    dict_force: List[str] = Field(
+    dict_force: list[str] = Field(
         default=[],
         description="强制自定义词条列表，例如：['我趣玩', '我趣玩AI', '数字人']",
     )
@@ -49,6 +49,6 @@ class ProcessTokResponse(ResponseBaseModel):
             "example": {
                 "errcode": 0,
                 "errmsg": "ok",
-                "tokens": ["我趣玩AI", "是", "数字人"],
+                "tok": ["我趣玩AI", "是", "数字人"],
             },
         }

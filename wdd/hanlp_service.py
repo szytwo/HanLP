@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from threading import Lock
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, Optional
 
 import hanlp
 from wdd.file_utils import logging
@@ -68,8 +68,8 @@ class HanlpService:
             raise RuntimeError("HanLP model has not been loaded.")
 
     def tokenize(
-        self, text: str, dict_force: Optional[Iterable[str]] = None
-    ) -> List[str]:
+        self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
+    ) -> list[str]:
         """
         中文分词。
 
@@ -91,7 +91,9 @@ class HanlpService:
 
             return self._tokenizer(text)
 
-    def pos(self, text: str, dict_force: Optional[Iterable[str]] = None) -> Any:
+    def pos(
+        self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
+    ) -> Any:
         """
         词性标注。
 
@@ -119,7 +121,9 @@ class HanlpService:
 
             return HanLP(text)
 
-    def ner(self, text: str, dict_force: Optional[Iterable[str]] = None) -> Any:
+    def ner(
+        self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
+    ) -> Any:
         """
         命名实体识别。
 
@@ -148,7 +152,9 @@ class HanlpService:
 
             return HanLP(text)
 
-    def dependency(self, text: str, dict_force: Optional[Iterable[str]] = None) -> Any:
+    def dependency(
+        self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
+    ) -> Any:
         """
         依存句法分析。
 
@@ -178,8 +184,8 @@ class HanlpService:
             return HanLP(text)
 
     def analyze(
-        self, text: str, dict_force: Optional[Iterable[str]] = None
-    ) -> Dict[str, Any]:
+        self, text: str | list[str], dict_force: Optional[Iterable[str]] = None
+    ) -> Any:
         """
         一次完成 NLP 全流程。
         流程：文本->Tokenize->POS->NER->Dependency

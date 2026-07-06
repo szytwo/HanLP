@@ -14,7 +14,6 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware  # 引入 CORS中间件模块
 
-import hanlp
 from wdd.file_utils import logging
 from wdd.hanlp_service import HanlpService
 from wdd.model.ProcessTokModel import ProcessTokRequest, ProcessTokResponse
