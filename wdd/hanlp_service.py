@@ -68,9 +68,7 @@ class HanlpService:
             raise RuntimeError("HanLP model has not been loaded.")
 
     def tokenize(
-        self,
-        text: str,
-        dict_force: Optional[Iterable[str]] = None,
+        self, text: str, dict_force: Optional[Iterable[str]] = None
     ) -> List[str]:
         """
         中文分词。
@@ -93,50 +91,94 @@ class HanlpService:
 
             return self._tokenizer(text)
 
-    def pos(self, words: List[str]) -> List[str]:
+    def pos(self, text: str, dict_force: Optional[Iterable[str]] = None) -> Any:
         """
         词性标注。
 
-        :param words: 分词后的结果
+        :param text: 输入文本
+        :param dict_force: 强制词典
         :return: 每个词对应的词性
         """
 
         self._check_loaded()
 
-        return self._pos(words)
+        if not text:
+            raise ValueError("text is empty.")
 
-    def ner(self, words: List[str], pos: Optional[List[str]] = None) -> Any:
+        with self._lock:
+            if dict_force:
+                self._tokenizer.dict_force = dict_force
+            else:
+                self._tokenizer.dict_force = None
+
+            HanLP = (
+                hanlp.pipeline()
+                .append(self._tokenizer, output_key="tok")
+                .append(self._pos, output_key="pos")
+            )
+
+            return HanLP(text)
+
+    def ner(self, text: str, dict_force: Optional[Iterable[str]] = None) -> Any:
         """
         命名实体识别。
 
-        :param words: 分词结果
-        :param pos: 可选词性
+        :param text: 输入文本
+        :param dict_force: 强制词典
         :return: HanLP 返回结果
         """
 
         self._check_loaded()
 
-        if pos is None:
-            return self._ner(words)
+        if not text:
+            raise ValueError("text is empty.")
 
-        return self._ner(words, pos)
+        with self._lock:
+            if dict_force:
+                self._tokenizer.dict_force = dict_force
+            else:
+                self._tokenizer.dict_force = None
 
-    def dependency(self, words: List[str]) -> Any:
+            HanLP = (
+                hanlp.pipeline()
+                .append(self._tokenizer, output_key="tok")
+                .append(self._pos, output_key="pos")
+                .append(self._ner, output_key="ner", input_key="tok")
+            )
+
+            return HanLP(text)
+
+    def dependency(self, text: str, dict_force: Optional[Iterable[str]] = None) -> Any:
         """
         依存句法分析。
 
-        :param words: 分词结果
+        :param text: 输入文本
+        :param dict_force: 强制词典
         :return: HanLP Dependency 结果
         """
 
         self._check_loaded()
 
-        return self._dependency(words)
+        if not text:
+            raise ValueError("text is empty.")
+
+        with self._lock:
+            if dict_force:
+                self._tokenizer.dict_force = dict_force
+            else:
+                self._tokenizer.dict_force = None
+
+            HanLP = (
+                hanlp.pipeline()
+                .append(self._tokenizer, output_key="tok")
+                .append(self._pos, output_key="pos")
+                .append(self._dependency, output_key="dep", input_key="tok")
+            )
+
+            return HanLP(text)
 
     def analyze(
-        self,
-        text: str,
-        dict_force: Optional[Iterable[str]] = None,
+        self, text: str, dict_force: Optional[Iterable[str]] = None
     ) -> Dict[str, Any]:
         """
         一次完成 NLP 全流程。
@@ -147,17 +189,26 @@ class HanlpService:
         :return: 全部分析结果。
         """
 
-        words = self.tokenize(text, dict_force)
-        pos = self.pos(words)
-        ner = self.ner(words, pos)
-        dep = self.dependency(words)
+        self._check_loaded()
 
-        return {
-            "tokens": words,
-            "pos": pos,
-            "ner": ner,
-            "dependency": dep,
-        }
+        if not text:
+            raise ValueError("text is empty.")
+
+        with self._lock:
+            if dict_force:
+                self._tokenizer.dict_force = dict_force
+            else:
+                self._tokenizer.dict_force = None
+
+            HanLP = (
+                hanlp.pipeline()
+                .append(self._tokenizer, output_key="tok")
+                .append(self._pos, output_key="pos")
+                .append(self._ner, output_key="ner", input_key="tok")
+                .append(self._dependency, output_key="dep", input_key="tok")
+            )
+
+            return HanLP(text)
 
     def status(self) -> Dict[str, bool]:
         """

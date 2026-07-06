@@ -111,15 +111,16 @@ async def process_tok(request: ProcessTokRequest):
     start_time = time.time()
 
     try:
-        response.tokens = hanlp_service.tokenize(request.text, request.dict_force)
+        response.tokens = hanlp_service.analyze(request.text, request.dict_force)
     except Exception as ex:
-        TextProcessor.log_error(ex)
         response.errcode = -1
-        response.errmsg = f"处理失败：{str(ex)}"
+        response.errmsg = f"Error occurred: {str(ex)}"
+
+        TextProcessor.log_error(ex)
 
     # 计算耗时
     elapsed = time.time() - start_time
-    logging.info(f"分词生成完成，用时: {elapsed}")
+    logging.info(f"Processed text in {elapsed:.4f} seconds.")
 
     return response
 
